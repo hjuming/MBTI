@@ -16,7 +16,7 @@
   <!-- 主題色 -->
   <meta name="theme-color" content="#f3efe7" />
 
-  <!-- EmailJS Keys -->
+  <!-- EmailJS Keys (請填入您自己的金鑰) -->
   <meta name="emailjs-public-key" content="9ZPs0xUKexoRA-Ckm" />
   <meta name="emailjs-service-id" content="service_ords2m8" />
   <meta name="emailjs-template-id" content="template_a73agrg" />
@@ -93,6 +93,10 @@
           <h4><i class="bi bi-clipboard2-data"></i> 八維度分數</h4>
           <ul id="scoreList" class="scores"></ul>
 
+          <!-- Top 4 區塊 -->
+          <h4 class="mt-4"><i class="bi bi-suit-heart"></i> 為你推薦的 4 張圖卡</h4>
+          <div id="top4List" class="top4-grid"></div>
+
           <div class="cta-row">
             <button id="retakeBtn" class="btn ghost"><i class="bi bi-arrow-clockwise"></i> 再測一次</button>
             <button id="shareBtn" class="btn"><i class="bi bi-share"></i> 分享結果</button>
@@ -104,6 +108,7 @@
               <input type="hidden" name="mbti_type" id="emailMbtiType">
               <input type="hidden" name="type_title" id="emailTypeTitle">
               <input type="hidden" name="type_desc" id="emailTypeDesc">
+              <input type="hidden" name="top4_types" id="emailTop4Types">
               <label>名字
                 <input type="text" name="user_name" placeholder="你的名字" required />
               </label>
@@ -117,10 +122,6 @@
         </div>
       </div>
     </section>
-
-    <!-- 載入中／錯誤 -->
-    <section id="loader" class="loader hidden">載入題庫中…</section>
-    <section id="errorBox" class="error hidden">讀取題庫失敗，請重新整理。</section>
   </main>
 
   <footer class="container footer">© 2025 MBTI × Animal Archetypes</footer>
@@ -129,4 +130,5 @@
   <script src="./js/app.js"></script>
 </body>
 </html>
+
 
