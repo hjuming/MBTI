@@ -1,142 +1,96 @@
-/* ========== Reset & Tokens ========== */
+/* ───────── MBTI x Animal Archetypes • Nouveau Theme ───────── */
 :root{
-  --bg:#faf6f1;
-  --card:#ffffff;
-  --ink:#27313a;
-  --muted:#6c7a86;
-  --accent:#1f7a8c;       /* Air(風) 藍綠 */
-  --accent-fire:#c0392b;  /* Fire(火) 赭紅 */
-  --accent-water:#2e856e; /* Water(水) 翡翠綠 */
-  --accent-earth:#b8860b; /* Earth(土) 琥珀 */
-  --ring: rgba(31,122,140,.25);
-  --radius:16px;
-  --shadow: 0 10px 28px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.06);
-  --pill: 999px;
-  --font: ui-sans-serif, -apple-system, "SF Pro Text", "PingFang TC",
-          "Noto Sans TC", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* 調色盤 */
+  --ink:#1e2430; --bg:#f6f2ea; --card:#ffffff;
+  --muted:#6b7684; --line:rgba(30,36,48,.10);
+  --air:#2f8aa5; --fire:#c44332; --water:#2a8b6f; --earth:#b48628;
+  --accent:var(--air);
+  --radius:18px; --pill:999px;
+  --shadow:0 12px 30px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.05);
+  --ring:0 0 0 6px rgba(47,138,165,.12);
+  --font: ui-sans-serif, -apple-system, "SF Pro Display", "PingFang TC",
+          "Noto Sans TC", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --brand: "Cormorant Garamond", "Times New Roman", serif;
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#0f1418; --card:#121a20; --ink:#eaf2f8; --muted:#9fb2c2;
-    --shadow: 0 10px 28px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.4);
-    --ring: rgba(97,178,191,.3);
+    --bg:#0f1317; --card:#12181f; --ink:#eaf2f8; --muted:#9fb0bf;
+    --line:rgba(255,255,255,.10); --shadow:0 16px 36px rgba(0,0,0,.5);
   }
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{
-  margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
-  -webkit-font-smoothing:antialiased;line-height:1.6;
-}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.6}
 
-/* ========== Shell ========== */
-.app{
-  max-width:960px;margin:auto;padding:20px 16px 80px;
-}
-.header{
-  display:flex;flex-direction:column;gap:4px;margin:8px 0 14px;
-}
-.h1{
-  font-size: clamp(22px, 3.6vw, 36px);
-  letter-spacing:.5px;font-weight:800;
-  text-shadow: 0 1px 0 rgba(255,255,255,.3);
-}
-.sub{
-  color:var(--muted);font-size:14px
-}
+/* 容器 */
+.app{max-width:960px;margin:auto;padding:28px 18px 96px}
 
-/* ========== Progress ========== */
-.progress{
-  position:sticky;top:0;z-index:50;background:linear-gradient(#fff0, #fff0);
-  padding:8px 0 10px;margin:8px 0 16px;
+/* 頂部品牌條 */
+.brand{
+  display:flex;align-items:center;gap:14px;margin:0 0 14px;
 }
-.bar{
-  width:100%;height:10px;border-radius:var(--pill);
-  background:rgba(0,0,0,.06);overflow:hidden;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,.06);
+.logo{
+  width:44px;height:44px;border-radius:50%;
+  background: radial-gradient(circle at 30% 25%,#fff 0%,#e3efe9 35%,#cde2e6 75%);
+  box-shadow: var(--shadow); border:1px solid var(--line);
 }
-.bar > i{
-  display:block;height:100%;width:0%;
-  background:linear-gradient(90deg,var(--accent),#7ec8d0);
-  border-radius:inherit;transition:width .35s ease;
+.title{
+  font-family:var(--brand);letter-spacing:.6px;
+  font-size: clamp(28px,4.2vw,46px);line-height:1.05;font-weight:700;
 }
-.count{margin-top:6px;color:var(--muted);font-size:12px}
+.subtitle{color:var(--muted);margin-top:2px}
 
-/* ========== Card & Question ========== */
+/* 進度條 */
+.progress{position:sticky;top:0;z-index:20;padding:10px 0 16px;background:linear-gradient(#0000,#0000)}
+.track{
+  height:12px;border-radius:999px;background:rgba(0,0,0,.07);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.10);
+}
+.fill{height:100%;width:0%;border-radius:inherit;
+  background:linear-gradient(90deg,var(--accent),#7fc6d2);transition:width .35s ease}
+
+/* 題卡 */
 .card{
-  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
-  padding:18px 16px;margin:0 0 18px;border:1px solid rgba(0,0,0,.06);
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:22px 18px;margin:18px 0
 }
-.q-title{
-  font-size: clamp(18px, 2.8vw, 22px);
-  font-weight:700;margin:6px 0 14px;
-}
+.q{font-size: clamp(18px,2.6vw,22px);font-weight:800;margin:4px 0 14px}
 
-/* 可選插圖區（若圖片失敗就不佔位） */
-.q-illustration img{max-width:100%;border-radius:12px;display:block;margin:8px auto}
-.q-illustration img[onerror]{display:none}
-
-/* ========== Options ========== */
-.options{
-  display:grid;grid-template-columns:1fr;gap:10px;
-}
-@media (min-width:620px){ .options{grid-template-columns:1fr 1fr} }
-
+/* 選項（膠囊） */
+.options{display:grid;gap:10px}
+@media(min-width:640px){ .options{grid-template-columns:1fr 1fr} }
 .opt{
-  display:flex;align-items:center;gap:10px;
-  background:linear-gradient(180deg,#fff, #f7fafb);
-  border:1px solid rgba(0,0,0,.08);border-radius:var(--pill);
-  padding:10px 14px;cursor:pointer;user-select:none;
-  transition: transform .06s ease, box-shadow .2s ease, border-color .2s ease;
+  display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--pill);
+  background:linear-gradient(#fff,#f6f9fb);border:1px solid var(--line);
+  cursor:pointer;user-select:none;transition:.15s ease; box-shadow:0 1px 0 #fff inset;
 }
-.opt:hover{ box-shadow:0 6px 16px var(--ring) }
-.opt:active{ transform: translateY(1px) }
-.opt input{ appearance:none; width:18px;height:18px;border-radius:50%;
-  border:2px solid var(--accent); box-shadow: inset 0 0 0 6px #fff; }
-.opt input:checked{ box-shadow: inset 0 0 0 4px #fff; background:var(--accent) }
-.opt span{font-weight:600}
+.opt:hover{box-shadow:var(--shadow)}
+.opt:active{transform:translateY(1px)}
+.opt input{appearance:none;width:18px;height:18px;border-radius:50%;border:2px solid var(--accent)}
+.opt input:checked{background:var(--accent);box-shadow:inset 0 0 0 4px #fff}
+.opt span{font-weight:700}
 
-/* ========== Nav Buttons ========== */
-.nav{
-  display:flex;gap:10px;justify-content:space-between;margin-top:14px
-}
-.btn{
-  border:none;border-radius:var(--pill);padding:10px 16px;font-weight:700;
-  cursor:pointer;box-shadow:var(--shadow);background:var(--accent);color:#fff;
-}
-.btn.secondary{ background:#eaeff3; color:#223; box-shadow:none }
-.btn:disabled{ opacity:.5; cursor:not-allowed }
+/* 導覽按鈕 */
+.actions{display:flex;gap:10px;justify-content:space-between;margin-top:14px}
+.btn{border:none;border-radius:var(--pill);padding:12px 18px;font-weight:800;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff;box-shadow:var(--shadow)}
+.btn.ghost{background:#eef3f6;color:#1c2028;border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 
-/* ========== Footer ========== */
-.footer{ text-align:center;color:var(--muted);font-size:12px;margin-top:24px }
+/* 結果頁 */
+.badge{display:inline-flex;gap:8px;align-items:center;padding:6px 12px;border-radius:999px;
+  background:rgba(47,138,165,.12);color:var(--accent);font-weight:800;border:1px dashed var(--accent)}
+.grid{display:grid;gap:16px}
+@media(min-width:760px){ .grid{grid-template-columns:1fr 1fr} }
+.card img{width:100%;border-radius:14px;display:block}
 
-/* ========== Result Page ========== */
-.result-hero{
-  display:flex;flex-direction:column;gap:16px;
-}
-.result-grid{
-  display:grid;gap:16px;margin-top:12px;
-  grid-template-columns: 1fr;
-}
-@media(min-width:720px){ .result-grid{ grid-template-columns: 1fr 1fr } }
-.result-card{
-  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
-  padding:14px;border:1px solid rgba(0,0,0,.06)
-}
-.result-card h3{ margin:8px 0 6px }
-.result-card img{ width:100%;border-radius:12px; display:block }
+/* 象限主色切換（給 body 加 data-element） */
+body[data-element="air"]{--accent:var(--air)}
+body[data-element="fire"]{--accent:var(--fire)}
+body[data-element="water"]{--accent:var(--water)}
+body[data-element="earth"]{--accent:var(--earth)}
 
-.badge{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:6px 10px;border-radius:var(--pill);
-  background:rgba(31,122,140,.12);color:var(--accent);font-weight:700
-}
-
-/* 若要切換四象限主色，可以在 body 上加 data-element="air|fire|water|earth" */
-body[data-element="fire"]  { --accent: var(--accent-fire) }
-body[data-element="water"] { --accent: var(--accent-water) }
-body[data-element="earth"] { --accent: var(--accent-earth) }
-
-/* ========== Small helpers ========== */
-.hr{ height:1px;background:rgba(0,0,0,.08);margin:18px 0 }
-.hidden{ display:none !important }
+/* 零碎 */
+.hr{height:1px;background:var(--line);margin:16px 0}
+.footer{color:var(--muted);text-align:center;margin-top:20px}
+.hidden{display:none!important}
