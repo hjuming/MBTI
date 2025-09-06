@@ -1,65 +1,33 @@
-:root{
-  --bg:#f7f4ee;
-  --text:#222;
-  --muted:#6b6b6b;
-  --card:#ffffff;
-  --primary:#2f7d5b; /* 溫暖綠，行動色 */
-  --air:#4b79a1;
-  --fire:#c75b39;
-  --water:#3f8f7d;
-  --earth:#b58b2a;
-  --radius:14px;
-  --shadow:0 6px 20px rgba(0,0,0,.06);
+/* css/style.css */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: #f0f2f5; /* 給一個柔和的背景色 */
+    background-image: url('../assets/background.jpg'); /* 試著放一張您喜歡的背景圖 */
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
 }
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Noto Sans TC",Segoe UI,Roboto}
-img{max-width:100%;display:block}
-.container{width:min(1000px,92%);margin:0 auto}
-.hidden{display:none}
 
-.brand{margin:.8rem 0 0;font-size:clamp(22px,3.8vw,34px)}
-.subtitle{margin:.2rem 0 1.2rem;color:var(--muted)}
-
-.hero{margin:1rem 0 1.5rem}
-.hero-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem}
-.hero-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-.hero-card img{aspect-ratio:4/3;object-fit:cover}
-.btn{background:#ece7dd;border:none;border-radius:999px;padding:.75rem 1.1rem;cursor:pointer}
-.btn.primary{background:var(--primary);color:#fff}
-.btn.ghost{background:transparent;border:1px solid #cfc7ba}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;margin:1rem 0}
-
-.progress{height:8px;background:#eee;border-radius:999px;overflow:hidden}
-.progress .bar{height:100%;width:0;background:var(--primary);transition:width .25s}
-.progress-text{font-size:.9rem;color:var(--muted);margin:.4rem 0 1rem}
-
-.question{font-weight:700;margin:.4rem 0 1rem}
-.options{display:grid;gap:.6rem}
-.option{padding:.75rem 1rem;border:1px solid #e4dfd6;border-radius:12px;cursor:pointer;background:#fff}
-.option:hover{border-color:#c7bfb4}
-.option.selected{outline:3px solid var(--primary);border-color:transparent;background:#f0faf4}
-
-.quiz-actions{display:flex;gap:.6rem;justify-content:flex-end;margin-top:.8rem}
-
-.result-head h2{margin:0 0 .2rem}
-.result-grid{display:grid;gap:1rem}
-@media(min-width:860px){
-  .result-grid{grid-template-columns:2fr 1fr}
+/* 讓卡片有點半透明，能透出背景，更有質感 */
+.card {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px); /* 蘋果風格的毛玻璃效果 */
 }
-.result-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem}
-.type-card{border-radius:12px;border:1px solid #eee;margin:.4rem 0}
-.type-desc{color:#444}
-.result-meta{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem}
-.scores{list-style:none;padding:0;margin:.4rem 0}
-.scores li{display:flex;justify-content:space-between;border-bottom:1px dashed #eee;padding:.3rem 0}
-.top4{margin:.4rem 0 0}
-.top4 li{margin:.25rem 0}
-.cta-row{display:flex;gap:.6rem;justify-content:center;margin:1rem 0}
-.email-panel{margin:1rem 0}
-.email-form{display:grid;gap:.6rem;max-width:420px}
-.email-form input{width:100%;padding:.6rem;border:1px solid #ddd;border-radius:10px}
-.hint{color:var(--muted)}
-.loader,.error{text-align:center;margin:2rem 0;color:var(--muted)}
-.footer{color:#8a857b;margin:2rem 0}
+
+/* 讓按鈕有更流暢的互動效果 */
+.btn {
+    transition: all 0.3s ease;
+}
+
+/* 讓不同區塊切換時有淡入淡出的動畫 */
+#quiz-container, #result-container {
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* d-none 是 Bootstrap 用的，我們需要自己定義一個 class 來做動畫 */
+.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
