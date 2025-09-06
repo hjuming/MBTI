@@ -1,0 +1,1 @@
+將四大象限 JPG 放在此資料夾：air.jpg, fire.jpg, water.jpg, earth.jpg。
