@@ -1,38 +1,122 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
+/>
   <title>MBTI × Animal Archetypes</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="preload" as="image" href="assets/quadrants/MBTI-16.jpg">
+  <link rel="stylesheet" href="./css/style.css" />
+
+  <!-- 四象限主題色（也可在 CSS 覆寫） -->
+  <meta name="theme-color" content="#f3efe7" />
+
+  <!-- EmailJS：把你的三個參數填入 content（或之後改成 Cloudflare Pages 環境變數注入也可） -->
+  <meta name="emailjs-public-key" content="9ZPs0xUKexoRA-Ckm" />
+  <meta name="emailjs-service-id" content="service_ords2m8" />
+  <meta name="emailjs-template-id" content="template_a73agrg" />
+
+  <!-- SheetJS 讀 Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
-  <header class="site-header">
-    <h1>MBTI × Animal Archetypes</h1>
-    <p class="sub">探索你的性格，找到專屬動物圖卡</p>
+  <header class="site-header container">
+    <h1 class="brand">MBTI × Animal Archetypes</h1>
+    <p class="subtitle">探索你的性格，找到專屬動物圖卡</p>
   </header>
 
-  <main id="app" class="container">
-    <!-- JS 會把題目與結果動態插入到這裡 -->
+  <main class="container">
+    <!-- Hero：四象限導視 -->
+    <section id="hero" class="hero">
+      <div class="hero-grid">
+        <div class="hero-card air">
+          <img src="./assets/quadrants/Air.jpg" alt="Air - Analysts" />
+        </div>
+        <div class="hero-card fire">
+          <img src="./assets/quadrants/Fire.jpg" alt="Fire - Diplomats" />
+        </div>
+        <div class="hero-card water">
+          <img src="./assets/quadrants/Water.jpg" alt="Water - Sentinels" />
+        </div>
+        <div class="hero-card earth">
+          <img src="./assets/quadrants/Earth.jpg" alt="Earth - Explorers" />
+        </div>
+      </div>
+      <button id="startBtn" class="btn primary">開始 32 題情境問卷</button>
+    </section>
+
+    <!-- 問卷 -->
+    <section id="quiz" class="card hidden" aria-live="polite">
+      <div class="quiz-header">
+        <div class="progress">
+          <div id="progressBar" class="bar"></div>
+        </div>
+        <div id="progressText" class="progress-text">0 / 32</div>
+      </div>
+
+      <div id="questionText" class="question"></div>
+      <div id="optionsWrap" class="options"></div>
+
+      <div class="quiz-actions">
+        <button id="prevBtn" class="btn ghost" disabled>上一題</button>
+        <button id="nextBtn" class="btn primary">下一題</button>
+      </div>
+    </section>
+
+    <!-- 結果頁 -->
+    <section id="result" class="hidden">
+      <div class="result-head">
+        <h2>完成！你的結果</h2>
+        <p>你的傾向：<strong id="typeText">—</strong></p>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-card">
+          <h3 class="result-title" id="typeTitle"></h3>
+          <img id="typeCard" class="type-card" src="" alt="" />
+          <p id="typeDesc" class="type-desc"></p>
+        </div>
+
+        <div class="result-meta">
+          <h4>八維度分數</h4>
+          <ul id="scoreList" class="scores"></ul>
+
+          <h4>為你挑的 4 張圖卡</h4>
+          <ol id="top4" class="top4"></ol>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <button id="retakeBtn" class="btn ghost">再測一次</button>
+        <button id="shareBtn" class="btn">分享</button>
+      </div>
+
+      <details class="email-panel">
+        <summary>把完整報告寄到 Email</summary>
+        <form id="emailForm" class="email-form">
+          <label>名字
+            <input type="text" name="user_name" placeholder="你的名字" required />
+          </label>
+          <label>Email
+            <input type="email" name="user_email" placeholder="you@example.com" required />
+          </label>
+          <button class="btn primary" type="submit">寄送完整報告</button>
+        </form>
+        <p id="emailMsg" class="hint"></p>
+      </details>
+    </section>
+
+    <!-- 載入中／錯誤 -->
+    <section id="loader" class="loader hidden">載入題庫中…</section>
+    <section id="errorBox" class="error hidden">讀取題庫失敗，請重新整理。</section>
   </main>
 
-  <footer class="site-footer">
-    <img src="assets/quadrants/MBTI-16.jpg" alt="Four Elements" class="quad">
-    <p>© 2025 MBTI × Animal Archetypes</p>
-  </footer>
+  <footer class="container footer">© 2025 MBTI × Animal Archetypes</footer>
 
-  <!-- EmailJS（使用你提供的金鑰與服務/樣板） -->
-  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-  <script>
-    (function(){
-      emailjs.init("9ZPs0xUKexoRA-Ckm"); // Public Key
-      window.EMAILJS_SERVICE_ID = "service_ords2m8";
-      window.EMAILJS_TEMPLATE_ID = "template_a73agrg";
-    })();
-  </script>
-
-  <script src="js/questions.js"></script>
-  <script src="js/app.js"></script>
+  <script src="./js/data.js"></script>
+  <script src="./js/app.js"></script>
 </body>
 </html>
