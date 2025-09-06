@@ -1,213 +1,275 @@
-/* 單頁式問卷：一題一頁、進度條、計分、結果＋EmailJS 寄送 */
+/* 初始化 EmailJS（從 <meta> 取三個 key） */
+(function initEmailJS(){
+  const pk = document.querySelector('meta[name="emailjs-public-key"]')?.content || "";
+  if (pk) emailjs.init({ publicKey: pk });
+})();
 
-const el = (sel) => document.querySelector(sel);
-const app = el('#app');
-
-const DIM_PAIRS = [
-  ["E","I"],
-  ["S","N"],
-  ["T","F"],
-  ["J","P"]
-];
-
-/* 16 型 → 動物與圖片（檔名：assets/cards/TYPE.jpg）
-   ─ 依你提供的最終定案 ─ */
-const TYPE_MAP = {
-  // 🌬️ Analysts (NT – Air)
-  "INTJ": { title:"Architect",   animals:"貓頭鷹 × 章魚",           img:"assets/cards/INTJ.jpg" },
-  "INTP": { title:"Logician",    animals:"烏鴉 × 變色龍",           img:"assets/cards/INTP.jpg" },
-  "ENTJ": { title:"Commander",   animals:"獅子 × 老鷹",             img:"assets/cards/ENTJ.jpg" },
-  "ENTP": { title:"Debater",     animals:"狐狸 × 海豚",             img:"assets/cards/ENTP.jpg" },
-
-  // 💧 Diplomats (NF – Water)（原文單貼有段落名錯置，這裡依型別正確歸類）
-  "INFJ": { title:"Advocate",    animals:"狼 × 白馬",               img:"assets/cards/INFJ.jpg" },
-  "INFP": { title:"Mediator",    animals:"鹿 × 兔子",               img:"assets/cards/INFP.jpg" },
-  "ENFJ": { title:"Protagonist", animals:"黃金獵犬 × 大象",         img:"assets/cards/ENFJ.jpg" },
-  "ENFP": { title:"Campaigner",  animals:"水獺 × 蝴蝶",             img:"assets/cards/ENFP.jpg" },
-
-  // 🌍 Sentinels (SJ – Earth)
-  "ISTJ": { title:"Logistician", animals:"海狸 × 烏龜",             img:"assets/cards/ISTJ.jpg" },
-  "ISFJ": { title:"Defender",    animals:"母熊 × 企鵝",             img:"assets/cards/ISFJ.jpg" },
-  "ESTJ": { title:"Executive",   animals:"牧羊犬 × 蜜蜂",           img:"assets/cards/ESTJ.jpg" },
-  "ESFJ": { title:"Consul",      animals:"袋鼠 × 天鵝",             img:"assets/cards/ESFJ.jpg" },
-
-  // 🔥 Explorers (SP – Fire)
-  "ISTP": { title:"Virtuoso",    animals:"猴子 × 野狼",             img:"assets/cards/ISTP.jpg" },
-  "ISFP": { title:"Adventurer",  animals:"孔雀 × 貓",               img:"assets/cards/ISFP.jpg" },
-  "ESTP": { title:"Entrepreneur",animals:"老虎 × 獵豹",             img:"assets/cards/ESTP.jpg" },
-  "ESFP": { title:"Entertainer", animals:"鸚鵡 × 海獅",             img:"assets/cards/ESFP.jpg" },
+/* 讀 meta 方便後面送信 */
+const EMAIL_CFG = {
+  service: document.querySelector('meta[name="emailjs-service-id"]')?.content || "",
+  template: document.querySelector('meta[name="emailjs-template-id"]')?.content || "",
 };
 
-let state = {
-  i: 0,
-  answers: [],  // {id, text, tags}
-  score: {E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0},
-  name: "", email: ""
+const $ = (sel)=>document.querySelector(sel);
+const $$ = (sel)=>document.querySelectorAll(sel);
+
+const el = {
+  hero: $("#hero"),
+  startBtn: $("#startBtn"),
+  quiz: $("#quiz"),
+  loader: $("#loader"),
+  error: $("#errorBox"),
+  progressBar: $("#progressBar"),
+  progressText: $("#progressText"),
+  questionText: $("#questionText"),
+  optionsWrap: $("#optionsWrap"),
+  prevBtn: $("#prevBtn"),
+  nextBtn: $("#nextBtn"),
+  result: $("#result"),
+  typeText: $("#typeText"),
+  typeTitle: $("#typeTitle"),
+  typeCard: $("#typeCard"),
+  typeDesc: $("#typeDesc"),
+  scoreList: $("#scoreList"),
+  top4: $("#top4"),
+  retakeBtn: $("#retakeBtn"),
+  shareBtn: $("#shareBtn"),
+  emailForm: $("#emailForm"),
+  emailMsg: $("#emailMsg"),
 };
 
-function renderProgress() {
-  const total = MBTI_QUESTIONS.length;
-  const pct = Math.round((state.i/total)*100);
-  return `<div class="progress"><div style="width:${pct}%"></div><span>${state.i}/${total}</span></div>`;
-}
+let QUESTIONS = [];   // {id, question, options:[{text,tags[]},...]}
+let current = 0;
+let answers = [];    // index of selected option (0..3)
+let score;           // {E,I,S,N,T,F,J,P}
 
-function renderQuestion() {
-  const q = MBTI_QUESTIONS[state.i];
-  const progress = renderProgress();
-  app.innerHTML = `
-    ${progress}
-    <section class="card">
-      <h2>${q.q}</h2>
-      <div class="opts">
-        ${q.options.map((op,idx)=>`
-          <button class="opt" data-idx="${idx}">${op.t}</button>
-        `).join("")}
-      </div>
-      <div class="nav">
-        <button class="ghost" ${state.i===0?"disabled":""} id="btnBack">上一題</button>
-      </div>
-    </section>
-  `;
-  app.querySelectorAll(".opt").forEach(btn=>{
-    btn.addEventListener("click",()=>selectOption(q, parseInt(btn.dataset.idx,10)));
-  });
-  el("#btnBack")?.addEventListener("click", goBack);
-}
+/* 載入 Excel → 轉為 QUESTIONS 陣列 */
+async function loadQuestions(){
+  el.loader.classList.remove("hidden");
+  try{
+    const buf = await fetch(window.QUIZ_XLSX).then(r=>r.arrayBuffer());
+    const wb = XLSX.read(buf, {type:"array"});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, {defval:""});
 
-function selectOption(q, idx){
-  const op = q.options[idx];
-  state.answers[state.i] = { id:q.id, text:op.t, tags:op.tags.slice() };
-  // 記分
-  op.tags.forEach(t=> state.score[t] = (state.score[t]||0)+1 );
+    const alias = window.headerAliases;
+    QUESTIONS = raw.map(row=>{
+      const pick = (keys)=>Object.keys(row).find(k=>keys.includes(k.trim()))||"";
+      const id = row[pick(alias.id)];
+      const q  = row[pick(alias.question)];
+      const o1 = row[pick(alias.opt1)], o2=row[pick(alias.opt2)], o3=row[pick(alias.opt3)], o4=row[pick(alias.opt4)];
+      const t1 = (row[pick(alias.tags1)]+"").split(/[,\s/]+").filter(Boolean);
+      const t2 = (row[pick(alias.tags2)]+"").split(/[,\s/]+").filter(Boolean);
+      const t3 = (row[pick(alias.tags3)]+"").split(/[,\s/]+").filter(Boolean);
+      const t4 = (row[pick(alias.tags4)]+"").split(/[,\s/]+").filter(Boolean);
+      return {
+        id, question:q,
+        options:[
+          {text:o1, tags:t1},
+          {text:o2, tags:t2},
+          {text:o3, tags:t3},
+          {text:o4, tags:t4},
+        ]
+      };
+    }).filter(q=>q.question);
 
-  state.i++;
-  if (state.i < MBTI_QUESTIONS.length) {
-    renderQuestion();
-  } else {
-    renderForm();
+    answers = new Array(QUESTIONS.length).fill(null);
+  }catch(e){
+    console.error(e);
+    el.error.classList.remove("hidden");
+  }finally{
+    el.loader.classList.add("hidden");
   }
 }
 
-function goBack(){
-  if (state.i===0) return;
-  // 回退要扣掉上一題的分數
-  const prev = state.answers[state.i-1];
-  if (prev) prev.tags.forEach(t=> state.score[t]--);
-  state.i--;
-  renderQuestion();
+/* UI：顯示某一題 */
+function renderQuestion(){
+  const q = QUESTIONS[current];
+  el.questionText.textContent = q.question;
+  el.optionsWrap.innerHTML = "";
+  q.options.forEach((opt,idx)=>{
+    const div = document.createElement("button");
+    div.type = "button";
+    div.className = "option" + (answers[current]===idx ? " selected":"");
+    div.innerText = opt.text || `選項 ${idx+1}`;
+    div.onclick = ()=>{
+      answers[current] = idx;
+      renderQuestion();
+    };
+    el.optionsWrap.appendChild(div);
+  });
+  el.prevBtn.disabled = current===0;
+  el.nextBtn.textContent = (current===QUESTIONS.length-1) ? "看結果" : "下一題";
+  const pct = Math.round(((answers.filter(a=>a!==null).length)/QUESTIONS.length)*100);
+  el.progressBar.style.width = `${pct}%`;
+  el.progressText.textContent = `${answers.filter(a=>a!==null).length} / ${QUESTIONS.length}`;
 }
 
-function typeFromScore(sc){
-  const letters = DIM_PAIRS.map(([a,b]) => (sc[a] >= sc[b] ? a : b)).join("");
-  return letters;
-}
-
-function renderForm(){
-  const progress = renderProgress();
-  app.innerHTML = `
-    ${progress}
-    <section class="card">
-      <h2>最後一步</h2>
-      <p>留下稱呼與 Email，接收你的完整結果（含 4 張最接近的動物圖卡）。</p>
-      <div class="form">
-        <label>稱呼<input id="name" placeholder="你的名字"></label>
-        <label>Email<input id="email" type="email" placeholder="you@example.com"></label>
-      </div>
-      <div class="nav">
-        <button class="ghost" id="btnBack">上一題</button>
-        <button id="btnFinish">看結果</button>
-      </div>
-    </section>
-  `;
-  el("#btnBack").addEventListener("click", goBack);
-  el("#btnFinish").addEventListener("click", ()=>{
-    state.name  = el("#name").value.trim();
-    state.email = el("#email").value.trim();
-    renderResult();
+/* 計分 */
+function tally(){
+  score = {E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
+  answers.forEach((sel,i)=>{
+    if(sel===null) return;
+    const tags = QUESTIONS[i].options[sel].tags || [];
+    tags.forEach(t=>{
+      const k = t.trim().toUpperCase();
+      if(score[k]!==undefined) score[k]+=1;
+    });
   });
 }
 
-function top4Types(sc){
-  // 主型 + 單軸翻轉三個鄰近型
-  const main = typeFromScore(sc);
-  const neighbors = [];
-  DIM_PAIRS.forEach(([a,b], idx)=>{
-    const letters = main.split("");
-    letters[idx] = (letters[idx]===a? b : a);
-    neighbors.push(letters.join(""));
-  });
-  return [main, ...neighbors];
+/* 取得四字母（同分→前者優先） */
+function toType(s){
+  const A = s.E>=s.I ? "E":"I";
+  const B = s.S>=s.N ? "S":"N";
+  const C = s.T>=s.F ? "T":"F";
+  const D = s.J>=s.P ? "J":"P";
+  return A+B+C+D;
 }
 
+/* 匹配 Top4（簡單四字母一致度 4~0；同分看 8 維差總和較小優先） */
+function pickTop4(s){
+  const types = Object.keys(window.TYPE_META);
+  const user = toType(s);
+  const userVec = {
+    E: s.E>=s.I ? 1:0, I: s.I>s.E ? 1:0,
+    S: s.S>=s.N ? 1:0, N: s.N>s.S ? 1:0,
+    T: s.T>=s.F ? 1:0, F: s.F>s.T ? 1:0,
+    J: s.J>=s.P ? 1:0, P: s.P>s.J ? 1:0,
+  };
+
+  const scoreType = (t)=>{
+    const v = {
+      E: t[0]==="E"?1:0, I: t[0]==="I"?1:0,
+      S: t[1]==="S"?1:0, N: t[1]==="N"?1:0,
+      T: t[2]==="T"?1:0, F: t[2]==="F"?1:0,
+      J: t[3]==="J"?1:0, P: t[3]==="P"?1:0,
+    };
+    let letters = 0;
+    if (t[0]===user[0]) letters++;
+    if (t[1]===user[1]) letters++;
+    if (t[2]===user[2]) letters++;
+    if (t[3]===user[3]) letters++;
+    // 次序：一致字母越多越好；差距總和越小越好
+    const diff = ["E","I","S","N","T","F","J","P"].reduce((acc,k)=>acc+Math.abs((v[k]||0)-(userVec[k]||0)),0);
+    return {letters, diff};
+  };
+
+  const ranked = types.map(t=>{
+    const m = scoreType(t);
+    return {type:t, letters:m.letters, diff:m.diff};
+  }).sort((a,b)=> b.letters - a.letters || a.diff - b.diff);
+
+  // 轉成百分比
+  const base = ranked.slice(0,4).map(r=>r.letters);
+  const sum = base.reduce((a,b)=>a+b,0) || 1;
+  return ranked.slice(0,4).map(r=>{
+    const pct = Math.round((r.letters / sum) * 100);
+    let reason = [];
+    for(let i=0;i<4;i++){
+      if(r.type[i]===user[i]) reason.push(r.type[i]);
+    }
+    return { type:r.type, pct, reason: reason.join("、") || "整體傾向相近" };
+  });
+}
+
+/* 渲染結果頁 */
 function renderResult(){
-  const t = typeFromScore(state.score);
-  const pack = TYPE_MAP[t] || {};
+  tally();
+  const type = toType(score);
+  const meta = window.TYPE_META[type];
+  el.typeText.textContent = type;
+  el.typeTitle.textContent = `${type} — ${meta.role}（${meta.keyword}）`;
+  el.typeCard.src = window.cardSrc(type);
+  el.typeCard.alt = `${type} 動物圖卡（${meta.role} / ${meta.keyword}）`;
+  el.typeDesc.textContent = meta.desc;
 
-  const axis = DIM_PAIRS.map(([a,b])=>{
-    const av = state.score[a]||0, bv = state.score[b]||0;
-    return `<li>${a}/${b}：${av}／${bv}</li>`;
+  el.scoreList.innerHTML = "";
+  ["E","I","S","N","T","F","J","P"].forEach(k=>{
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${k}</span><strong>${score[k]||0}</strong>`;
+    el.scoreList.appendChild(li);
+  });
+
+  const top = pickTop4(score);
+  el.top4.innerHTML = top.map(t=>{
+    const m = window.TYPE_META[t.type];
+    return `<li><strong>${t.type}</strong> — ${m.animals.join(" × ")}（${t.pct}%；一致：${t.reason}）</li>`;
   }).join("");
 
-  const picks = top4Types(state.score)
-    .map(tp=>{
-      const m = TYPE_MAP[tp]||{};
-      return `
-        <div class="pick">
-          <img src="${m.img||''}" alt="${tp}" onerror="this.style.opacity=.1">
-          <div class="cap"><strong>${tp}</strong> — ${m.animals||''}</div>
-        </div>`;
-    }).join("");
+  // Email form 綁定
+  el.emailForm.onsubmit = async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const payload = {
+      user_name: fd.get("user_name") || "",
+      user_email: fd.get("user_email") || "",
+      result_type: type,
+      scores_json: JSON.stringify(score),
+      top1_type: top[0]?.type || "", top1_reason: top[0]?.reason || "", top1_pct: top[0]?.pct || 0,
+      top2_type: top[1]?.type || "", top2_reason: top[1]?.reason || "", top2_pct: top[1]?.pct || 0,
+      top3_type: top[2]?.type || "", top3_reason: top[2]?.reason || "", top3_pct: top[2]?.pct || 0,
+      top4_type: top[3]?.type || "", top4_reason: top[3]?.reason || "", top4_pct: top[3]?.pct || 0,
+      retake_url: location.origin + location.pathname,
+      pdf_url: "", // 可日後接 html2pdf
+      cards_html: top.map(t=>{
+        const m = window.TYPE_META[t.type];
+        return `
+          <tr>
+            <td width="96"><img src="${window.cardSrc(t.type)}" alt="${t.type}" width="96"/></td>
+            <td><strong>${t.type}</strong> — ${m.role} ${m.keyword}<br/>${m.animals.join(" × ")}｜一致：${t.reason}（${t.pct}%）</td>
+          </tr>`;
+      }).join("")
+    };
 
-  app.innerHTML = `
-    <section class="card">
-      <h2>完成！你的結果</h2>
-      <p class="lead">你的傾向：<strong>${t}</strong></p>
-      <div class="hero">
-        <img class="main-card" src="${pack.img||''}" alt="${t}" onerror="this.style.opacity=.1">
-        <div class="meta">
-          <h3>${pack.title||''}</h3>
-          <p>${pack.animals||''}</p>
-          <ul class="axis">${axis}</ul>
-        </div>
-      </div>
-
-      <h3>為你挑的 4 張圖卡</h3>
-      <div class="grid4">${picks}</div>
-
-      <div class="email-panel">
-        <button id="btnEmail">把完整報告寄到 Email</button>
-      </div>
-      <div class="again">
-        <a href="./">再測一次</a>
-      </div>
-    </section>
-  `;
-
-  el("#btnEmail").addEventListener("click", sendEmail);
-}
-
-function sendEmail(){
-  const payload = {
-    name: state.name || "朋友",
-    email: state.email || "",
-    type: typeFromScore(state.score),
-    score: JSON.stringify(state.score),
-    answers: JSON.stringify(state.answers)
+    try{
+      const {service, template} = EMAIL_CFG;
+      if(!service || !template) throw new Error("EmailJS 參數未設定");
+      await emailjs.send(service, template, payload);
+      el.emailMsg.textContent = "已寄送完整報告，請至信箱查看。";
+    }catch(err){
+      console.error("EmailJS error:", err);
+      el.emailMsg.textContent = "寄送失敗，稍後再試";
+    }
   };
-  if (!payload.email) {
-    alert("請輸入 Email");
-    return;
-  }
-  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, payload)
-    .then(()=> alert("已寄出！請查收信箱"))
-    .catch(err=>{
-      console.error(err);
-      alert("寄送失敗，稍後再試");
-    });
+
+  el.result.classList.remove("hidden");
+  el.quiz.classList.add("hidden");
+  el.hero.classList.add("hidden");
 }
 
-/* 初始載入 */
-(function start(){
-  state = { i:0, answers:[], score:{E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0}, name:"", email:"" };
+/* 分享 */
+async function share(){
+  const txt = `我的 MBTI 動物原型：${el.typeText.textContent} ｜來測試 👉 ${location.href}`;
+  if(navigator.share){
+    try{ await navigator.share({title:document.title, text:txt, url:location.href}); }catch{}
+  }else{
+    await navigator.clipboard.writeText(txt);
+    alert("連結已複製！");
+  }
+}
+
+/* 事件 */
+el.startBtn.onclick = async ()=>{
+  await loadQuestions();
+  if(!QUESTIONS.length) return;
+  el.hero.classList.add("hidden");
+  el.quiz.classList.remove("hidden");
+  current = 0; answers.fill(null);
   renderQuestion();
-})();
+};
+el.prevBtn.onclick = ()=>{ if(current>0){ current--; renderQuestion(); }};
+el.nextBtn.onclick = ()=>{
+  if(answers[current]==null){ alert("請先選擇一個選項"); return; }
+  if(current<QUESTIONS.length-1){ current++; renderQuestion(); }
+  else{ renderResult(); }
+};
+el.retakeBtn.onclick = ()=>location.reload();
+el.shareBtn.onclick = share;
+
+/* 頁面進入：如果已經填過（例如返回），重新渲染 */
+window.addEventListener("pageshow", ()=> {
+  if(QUESTIONS.length && !el.quiz.classList.contains("hidden")){
+    renderQuestion();
+  }
+});
