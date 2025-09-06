@@ -1,0 +1,1 @@
+將 16 張 JPG 放在此資料夾，檔名需為 MBTI 代碼，例如 INTJ.jpg、ENFP.jpg 等。
